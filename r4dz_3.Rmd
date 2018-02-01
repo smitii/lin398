@@ -1,0 +1,135 @@
+---
+title: 'r4ds Chapter 3'
+author: "Smiti Kaul"
+date: "Jan 22 - Feb 1, 2018"
+output: 
+  pdf_document: 
+    highlight: pygments
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, include = FALSE}
+library(tidyverse)
+library(ggplot2)
+library(gridExtra)
+library(grid)
+```
+
+# 3.2: First steps
+```{r, fig.asp = 0.4}
+ggplot(data = mpg) + geom_point(mapping = aes(x = displ, y = hwy))
+```
+
+## Exercises
+
+```{r, eval = FALSE}
+dim(mpg) # 234 rows, 11 columns
+```
+
+drv: f = front-wheel drive, r = rear wheel drive, 4 = 4wd
+
+```{r}
+p1 = ggplot(data = mpg) + geom_point(mapping = aes(x = hwy, y = cyl))
+p2 = ggplot(data = mpg) + geom_point(mapping = aes(x = class, y = drv))
+grid.arrange(p1, p2, ncol = 2)
+```
+
+Not useful because we can't see any patterns due to few data points?
+
+# 3.3: Aesthetic Mappings
+
+```{r}
+p1 = ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy, color = class))
+
+p2 = ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy, size = class))
+
+p3 = ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy, alpha = class))
+
+p4 = ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy, shape = class))
+
+p5 = ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy), color = "blue")
+
+pushViewport(viewport(layout = grid.layout(2, 2)))
+print(p1, vp = viewport(layout.pos.row = 1, layout.pos.col = 1))
+print(p2, vp = viewport(layout.pos.row = 1, layout.pos.col = 2))
+print(p3, vp = viewport(layout.pos.row = 2, layout.pos.col = 1))
+print(p4, vp = viewport(layout.pos.row = 2, layout.pos.col = 2))
+show(p5)
+```
+
+## Exercises
+
+1. The correct code is $ggplot(data = mpg) + geom_point(mapping = aes(x = displ, y = hwy), color = "blue")$.
+
+2. categorical vs. continuous
+
+3. 
+
+4. 
+
+5. stroke: to modify the width of the border of a shape with a border
+
+6. 
+
+# 3.4: Common problems
+
+# 3.5: Facets
+
+A facet is a subplot that displays one subset of the data. 
+
+```{r}
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy)) + 
+  facet_wrap(~ class, nrow = 2)
+```
+
+facet_grid() to facet my plot on the combo of two variables.
+
+```{r}
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy)) + 
+  facet_grid(drv ~ cyl)
+# facet_grid(. ~ cyl) if you prefer to not facet in the rows of columns direction
+```
+
+## Exercises
+1. 
+2. 
+3.
+```{r}
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy)) + 
+ facet_grid(drv ~ .)
+
+ggplot(data = mpg) +
+  geom_point(mapping = aes(x = displ, y = hwy)) +
+  facet_grid(. ~ cyl)
+```
+
+4.
+```{r}
+ggplot(data = mpg) +
+  geom_point(mapping = aes(x = displ, y = hwy)) +
+  facet_wrap(~ class, nrow = 2)
+```
+
+# 3.6: Geometric objects
+
+# 3.7: Statistical transformations
+
+# 3.8: Position adjustments
+
+# 3.9: Coordinate systems
+
+# 3.10: 
+
+
