@@ -17,11 +17,47 @@ library(tidyverse)
 library(ggplot2)
 library(gridExtra)
 library(grid)
+library(langdata)
+data(swda); data(brown)
+```
+
+# Modify SWDA data
+```{r}
+df <- swda
+df$sex[df$sex == 'MALE'] <- 0
+df$sex[df$sex == 'FEMALE'] <- 1
+
+# sort(unique(df$dialect_area))
+df$dialect_area[df$dialect_area == 'MIXED'] <- 0
+df$dialect_area[df$dialect_area == 'NEW ENGLAND'] <- 1
+df$dialect_area[df$dialect_area == 'NORTH MIDLAND'] <- 2
+df$dialect_area[df$dialect_area == 'NORTHERN'] <- 3
+df$dialect_area[df$dialect_area == 'NYC'] <- 4
+df$dialect_area[df$dialect_area == 'SOUTH MIDLAND'] <- 5
+df$dialect_area[df$dialect_area == 'SOUTHERN'] <- 6
+df$dialect_area[df$dialect_area == 'UNK'] <- 7
+df$dialect_area[df$dialect_area == 'WESTERN'] <- 8
+
+df$sex <- as.numeric(as.character(df$sex))
+df$dialect_area <- as.numeric(as.character(df$dialect_area))
+df$utterance_num <- as.numeric(as.character(df$utterance_num))
+df$turn_num <- as.numeric(as.character(df$turn_num))
 ```
 
 # 3.2: First steps
 ```{r, fig.asp = 0.4}
 ggplot(data = mpg) + geom_point(mapping = aes(x = displ, y = hwy))
+ggplot(data = df) + geom_point(mapping = aes(x = birth_year, y = turn_num))
+ggplot(data = df) + geom_point(mapping = aes(x = utterance_num, y = turn_num))
+
+ggplot(data = df) + geom_point(mapping = aes(x = dialect_area, y = utterance_num))
+ggplot() + geom_point(data = df, mapping = aes(x = dialect_area, y = utterance_num))
+
+plot(utterance_num ~ dialect_area, data = df)
+
+ggplot() + 
+  geom_point(data = mpg, mapping = aes(x = displ, y = hwy)) + 
+  geom_smooth(data = mpg, mapping = aes(x = displ, y = hwy))
 ```
 
 ## Exercises
@@ -86,7 +122,7 @@ show(p5)
 
 A facet is a subplot that displays one subset of the data. 
 
-```{r}
+```{r, fig.asp = 0.5}
 ggplot(data = mpg) + 
   geom_point(mapping = aes(x = displ, y = hwy)) + 
   facet_wrap(~ class, nrow = 2)
@@ -94,7 +130,7 @@ ggplot(data = mpg) +
 
 facet_grid() to facet my plot on the combo of two variables.
 
-```{r}
+```{r, fig.asp = 0.5}
 ggplot(data = mpg) + 
   geom_point(mapping = aes(x = displ, y = hwy)) + 
   facet_grid(drv ~ cyl)
@@ -105,7 +141,7 @@ ggplot(data = mpg) +
 1. 
 2. 
 3.
-```{r}
+```{r, fig.asp = 0.5}
 ggplot(data = mpg) + 
   geom_point(mapping = aes(x = displ, y = hwy)) + 
  facet_grid(drv ~ .)
@@ -116,7 +152,7 @@ ggplot(data = mpg) +
 ```
 
 4.
-```{r}
+```{r, fig.asp = 0.5}
 ggplot(data = mpg) +
   geom_point(mapping = aes(x = displ, y = hwy)) +
   facet_wrap(~ class, nrow = 2)
@@ -125,6 +161,17 @@ ggplot(data = mpg) +
 # 3.6: Geometric objects
 
 # 3.7: Statistical transformations
+
+```{r, fig.asp = 0.5}
+ggplot(data = df) + geom_bar(mapping = aes(x = dialect_area)) + labs(title = 'dialect_area counts')
+ggplot(data = swda) + geom_bar(mapping = aes(x = dialect_area)) + labs(title = 'dialect_area counts')
+ggplot(data = df) + geom_bar(mapping = aes(x = dialect_area, y = utterance_num), stat = "identity") + labs(title = 'dialect_area ~ utterance_count')
+
+ggplot(df, aes(dialect_area, ..count..)) + geom_bar(aes(fill = utterance_num), position = "dodge")
+ggplot(swda, aes(sex, ..count..)) + geom_bar(aes(fill = utterance_num), position = "dodge")
+ggplot(swda, aes(utterance_num, ..count..)) + geom_bar(aes(fill = sex), position = "dodge")
+```
+
 
 # 3.8: Position adjustments
 
