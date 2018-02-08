@@ -1,0 +1,13 @@
+A dataset containing the 1,1150 conversations of 440 speakers of American English.
+A data frame with 223,506 rows and 11 variables:
+doc_id		ID for each conversation document
+damsl_tag	DAMSL dialog act annotation labels
+speaker		Label for each speaker in the conversation
+turn_num	Number of contiguous utterance turns for a given speaker
+utterance_num	The cumulative number of utterances in the conversation
+utterance_text	The actual dialog utterance
+speaker_id	Unique speaker identification code
+sex		Sex of the speaker
+birth_year	Year that the speaker was born
+dialect_area	Region from the US where the speaker spent first 10 years
+education	Highest educational level attained
