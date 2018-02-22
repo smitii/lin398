@@ -1,7 +1,7 @@
 ---
 title: 'r4ds Chapter 3'
 author: "Smiti Kaul"
-date: "Jan 22 - Feb 1, 2018"
+date: "Jan 22 - Feb 8, 2018"
 output: 
   pdf_document: 
     highlight: pygments
