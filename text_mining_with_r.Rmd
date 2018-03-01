@@ -13,25 +13,12 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r, include = FALSE, tidy = TRUE}
-library(tidyverse)
-library(ggplot2)
-library(gridExtra)
-library(grid)
-# library(langdata)
-# data(swda); data(brown)
-library(gutenbergr)
 if (!require("pacman", character.only = TRUE)) {
   install.packages("pacman")
   library("pacman", character.only = TRUE)
 }
-# Script-specific options or packages
-pacman::p_load(tidyverse, gutenbergr)
-library(ggplot2) 
-library(tidytext) 
-library(janeaustenr)
-library(stringr)
-data(stop_word)
-p_load(scales, wordcloud, reshape2)
+pacman:: p_load(scales, wordcloud, reshape2, tidyverse, ggplot2, gridExtra, grid, langdata, gutenbergr, tidytext, janeaustenr, stringr, dplyr)
+# data(swda); data(brown); data(stop_word)
 ```
 
 ## Following the article
@@ -201,3 +188,160 @@ tidy_books %>%
 ```
 
 ### Units beyond just words
+
+## Word and Document Frequency
+
+### Term Frequency
+```{r, tidy = TRUE}
+book_words <- austen_books() %>%
+  unnest_tokens(word, text) %>%
+  count(book, word, sort = TRUE) %>%
+  ungroup()
+
+total_words <- book_words %>% 
+  group_by(book) %>% 
+  summarize(total = sum(n))
+
+book_words <- left_join(book_words, total_words)
+
+head(book_words)
+
+ggplot(book_words, aes(n/total, fill = book)) +
+  geom_histogram(show.legend = FALSE) +
+  xlim(NA, 0.0009) +
+  facet_wrap(~book, ncol = 2, scales = "free_y")
+```
+
+### Zipf's Law
+```{r, tidy = TRUE}
+freq_by_rank <- book_words %>% 
+  group_by(book) %>% 
+  mutate(rank = row_number(), 
+         `term frequency` = n/total)
+
+head(freq_by_rank)
+
+freq_by_rank %>% 
+  ggplot(aes(rank, `term frequency`, color = book)) + 
+  geom_line(size = 1.1, alpha = 0.8, show.legend = FALSE) + 
+  scale_x_log10() +
+  scale_y_log10()
+```
+
+### The bind_tf_idf function
+```{r, tidy = TRUE}
+book_words <- book_words %>%
+  bind_tf_idf(word, book, n)
+head(book_words)
+
+book_words %>%
+  select(-total) %>%
+  arrange(desc(tf_idf))
+
+book_words %>%
+  arrange(desc(tf_idf)) %>%
+  mutate(word = factor(word, levels = rev(unique(word)))) %>% 
+  group_by(book) %>% 
+  top_n(15) %>% 
+  ungroup %>%
+  ggplot(aes(word, tf_idf, fill = book)) +
+  geom_col(show.legend = FALSE) +
+  labs(x = NULL, y = "tf-idf") +
+  facet_wrap(~book, ncol = 2, scales = "free") +
+  coord_flip()
+```
+
+### A corpus of physics texts
+```{r, tidy = TRUE}
+physics <- gutenberg_download(c(37729, 14725, 13476, 5001), 
+                              meta_fields = "author")
+```
+
+```{r, tidy = TRUE}
+physics_words <- physics %>%
+  unnest_tokens(word, text) %>%
+  count(author, word, sort = TRUE) %>%
+  ungroup()
+
+head(physics_words)
+
+plot_physics <- physics_words %>%
+  bind_tf_idf(word, author, n) %>%
+  arrange(desc(tf_idf)) %>%
+  mutate(word = factor(word, levels = rev(unique(word)))) %>%
+  mutate(author = factor(author, levels = c("Galilei, Galileo",
+                                            "Huygens, Christiaan", 
+                                            "Tesla, Nikola",
+                                            "Einstein, Albert")))
+
+plot_physics %>% 
+  group_by(author) %>% 
+  top_n(15, tf_idf) %>% 
+  ungroup() %>%
+  mutate(word = reorder(word, tf_idf)) %>%
+  ggplot(aes(word, tf_idf, fill = author)) +
+  geom_col(show.legend = FALSE) +
+  labs(x = NULL, y = "tf-idf") +
+  facet_wrap(~author, ncol = 2, scales = "free") +
+  coord_flip()
+```
+
+### A corpus of ___ texts
+```{r, tidy = TRUE}
+# gutenberg_metadata %>% filter(title == "Ramayana, English")
+bib <- gutenberg_download(10, meta_fields = "author")
+anthem <- gutenberg_download(1249, meta_fields = "author")
+sid <- gutenberg_download(2500, meta_fields = "author")
+myths_china <- gutenberg_download(15250, meta_fields = "author")
+myths_japan <- gutenberg_download(4108, meta_fields = "author")
+```
+
+```{r, tidy = TRUE}
+anthem_words <- anthem %>%
+  unnest_tokens(word, text) %>%
+  count(author, word, sort = TRUE) %>%
+  ungroup()
+
+anthem_words
+
+bib_words <- bib %>%
+  unnest_tokens(word, text) %>%
+  count(author, word, sort = TRUE) %>%
+  ungroup()
+
+bib_words
+
+sid_words <- sid %>%
+  unnest_tokens(word, text) %>%
+  count(author, word, sort = TRUE) %>%
+  ungroup()
+
+sid_words
+
+myths_china_words <- myths_china %>%
+  unnest_tokens(word, text) %>%
+  count(author, word, sort = TRUE) %>%
+  ungroup()
+
+myths_china_words
+
+plot_bib <- bib_words %>%
+  bind_tf_idf(word, author, n) %>%
+  arrange(desc(tf_idf)) %>%
+  mutate(word = factor(word, levels = rev(unique(word)))) %>%
+  mutate(author = factor(author, levels = c("Galilei, Galileo",
+                                            "Huygens, Christiaan", 
+                                            "Tesla, Nikola",
+                                            "Einstein, Albert")))
+
+plot_physics %>% 
+  group_by(author) %>% 
+  top_n(15, tf_idf) %>% 
+  ungroup() %>%
+  mutate(word = reorder(word, tf_idf)) %>%
+  ggplot(aes(word, tf_idf, fill = author)) +
+  geom_col(show.legend = FALSE) +
+  labs(x = NULL, y = "tf-idf") +
+  facet_wrap(~author, ncol = 2, scales = "free") +
+  coord_flip()
+```
