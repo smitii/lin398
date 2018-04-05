@@ -976,3 +976,171 @@ word_by_favs %>%
        y = "Median # of favorites for tweets containing each word")
 ```
 
+# Case study: mining NASA metadata
+
+## 8.1: How data is organized at NASA
+
+```{r}
+library(jsonlite)
+metadata <- fromJSON("https://data.nasa.gov/data.json")
+names(metadata$dataset)
+```
+
+```{r}
+nasa_title <- data_frame(id = metadata$dataset$`_id`$`$oid`, 
+                         title = metadata$dataset$title)
+nasa_title
+```
+```{r}
+nasa_desc <- data_frame(id = metadata$dataset$`_id`$`$oid`, 
+                        desc = metadata$dataset$description)
+nasa_desc %>% 
+  select(desc) %>% 
+  sample_n(5)
+```
+```{r}
+nasa_keyword <- data_frame(id = metadata$dataset$`_id`$`$oid`, 
+                           keyword = metadata$dataset$keyword) %>%
+  unnest(keyword)
+nasa_keyword
+```
+```{r}
+nasa_title <- nasa_title %>% 
+  unnest_tokens(word, title) %>% 
+  anti_join(stop_words)
+
+nasa_desc <- nasa_desc %>% 
+  unnest_tokens(word, desc) %>% 
+  anti_join(stop_words)
+```
+```{r}
+nasa_title %>%
+  count(word, sort = TRUE)
+```
+
+
+
+```{r}
+nasa_desc %>% 
+  count(word, sort = TRUE)
+```
+
+```{r}
+my_stopwords <- data_frame(word = c(as.character(1:10), 
+                                    "v1", "v03", "l2", "l3", "l4", "v5.2.0", 
+                                    "v003", "v004", "v005", "v006", "v7"))
+nasa_title <- nasa_title %>% 
+  anti_join(my_stopwords)
+nasa_desc <- nasa_desc %>% 
+  anti_join(my_stopwords)
+```
+```{r}
+# most common keywords
+nasa_keyword %>% 
+  group_by(keyword) %>% 
+  count(sort = TRUE)
+```
+```{r}
+nasa_keyword <- nasa_keyword %>% 
+  mutate(keyword = toupper(keyword))
+```
+
+## Word co-occurrences and correlations
+```{r}
+# getting an error
+p_load(widyr)
+title_word_pairs <- nasa_title %>% 
+  pairwise_count(word, id, sort = TRUE, upper = FALSE)
+title_word_pairs
+```
+```{r}
+# getting an error
+desc_word_pairs <- nasa_desc %>% 
+  pairwise_count(word, id, sort = TRUE, upper = FALSE)
+
+desc_word_pairs
+```
+
+```{r}
+# error
+p_load(ggplot2)
+p_load(igraph)
+p_load(ggraph)
+
+set.seed(1234)
+title_word_pairs %>%
+  filter(n >= 250) %>%
+  graph_from_data_frame() %>%
+  ggraph(layout = "fr") +
+  geom_edge_link(aes(edge_alpha = n, edge_width = n), edge_colour = "cyan4") +
+  geom_node_point(size = 5) +
+  geom_node_text(aes(label = name), repel = TRUE, 
+                 point.padding = unit(0.2, "lines")) +
+  theme_void()
+```
+```{r}
+# error
+set.seed(1234)
+desc_word_pairs %>%
+  filter(n >= 5000) %>%
+  graph_from_data_frame() %>%
+  ggraph(layout = "fr") +
+  geom_edge_link(aes(edge_alpha = n, edge_width = n), edge_colour = "darkred") +
+  geom_node_point(size = 5) +
+  geom_node_text(aes(label = name), repel = TRUE,
+                 point.padding = unit(0.2, "lines")) +
+  theme_void()
+```
+```{r}
+# errors stopped here
+keyword_pairs <- nasa_keyword %>% 
+  pairwise_count(keyword, id, sort = TRUE, upper = FALSE)
+
+keyword_pairs
+```
+```{r}
+p_load(igraph)
+p_load(ggraph)
+set.seed(1234)
+keyword_pairs %>%
+  filter(n >= 700) %>%
+  graph_from_data_frame() %>%
+  ggraph(layout = "fr") +
+  geom_edge_link(aes(edge_alpha = n, edge_width = n), edge_colour = "royalblue") +
+  geom_node_point(size = 5) +
+  geom_node_text(aes(label = name), repel = TRUE,
+                 point.padding = unit(0.2, "lines")) +
+  theme_void()
+```
+
+```{r}
+keyword_cors <- nasa_keyword %>% 
+  group_by(keyword) %>%
+  filter(n() >= 50) %>%
+  pairwise_cor(keyword, id, sort = TRUE, upper = FALSE)
+
+keyword_cors
+```
+
+```{r}
+set.seed(1234)
+keyword_cors %>%
+  filter(correlation > .6) %>%
+  graph_from_data_frame() %>%
+  ggraph(layout = "fr") +
+  geom_edge_link(aes(edge_alpha = correlation, edge_width = correlation), edge_colour = "royalblue") +
+  geom_node_point(size = 5) +
+  geom_node_text(aes(label = name), repel = TRUE,
+                 point.padding = unit(0.2, "lines")) +
+  theme_void()
+```
+
+
+## 8.3: Calculating tf-idf for the description fields
+```{r}
+desc_tf_idf <- nasa_desc %>% 
+  count(id, word, sort = TRUE) %>%
+  ungroup() %>%
+  bind_tf_idf(word, id, n)
+```
+
