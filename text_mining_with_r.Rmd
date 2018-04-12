@@ -1150,12 +1150,14 @@ desc_tf_idf %>%
   arrange(-tf_idf)
 ```
 
-```{r}
+```{r, eval = FALSE}
+# I'm getting an std::bad_alloc error here
 library(dplyr)
 desc_tf_idf <- full_join(desc_tf_idf, nasa_keyword, by = "id")
 ```
 
-```{r}
+```{r, eval = FALSE}
+# can't do because of previous error
 desc_tf_idf %>% 
   filter(!near(tf, 1)) %>%
   filter(keyword %in% c("SOLAR ACTIVITY", "CLOUDS", 
